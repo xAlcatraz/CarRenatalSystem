@@ -3,6 +3,4 @@
 Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
 Click nbfs://nbhost/SystemFileSystem/Templates/XML/XMLDocument.xml to edit this template
 -->
-
-<Context path="/CarRentalSystem" reloadable="true" />
-
+<Context path="/CarRentalSystem" reloadable="true"/>
