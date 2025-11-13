@@ -42,7 +42,7 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("userEmail", user.getEmail());
                 session.setAttribute("userRole", user.getRole());
-                response.sendRedirect(request.getContextPath() + "/index.jsp");
+                response.sendRedirect(request.getContextPath() + "/browse-cars");
             } else {
                 response.sendRedirect(request.getContextPath() + "/login.jsp?err=1");
             }

@@ -35,6 +35,7 @@
             <br>
             <button type="submit">Login</button>
         </form>
-        <p><a href="<%= request.getContextPath() %>/register.jsp">Don't have an Account> Register</a></p>
+        <p><a href="<%= request.getContextPath() %>/register.jsp">Don't have an Account --> Register</a></p>
+        <p><a href="<%= request.getContextPath() %>/index.jsp">Back to Main Menu</a></p>
     </body>
 </html>

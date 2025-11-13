@@ -32,5 +32,6 @@
             <button type="submit">Create Account</button>
         </form>
         <p><a href="<%= request.getContextPath() %>/login.jsp">Back to Login</a></p>
+        <p><a href="<%= request.getContextPath() %>/index.jsp">Back to Main Menu</a></p>
     </body>
 </html>

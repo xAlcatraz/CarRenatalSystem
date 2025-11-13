@@ -1,0 +1,238 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.carrental.servlets;
+
+import com.carrental.util.DBConnection;
+import com.carrental.model.Car;
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import java.io.*;
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
+@WebServlet("/book-car")
+public class BookCarServlet extends HttpServlet {
+    
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        // Check if user is logged in
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            // Not logged in - redirect to login
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+        
+        // Get car ID from URL parameter
+        String carIdStr = request.getParameter("carId");
+        
+        if (carIdStr == null || carIdStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/browse-cars");
+            return;
+        }
+        
+        int carId = Integer.parseInt(carIdStr);
+        
+        // Get car details from database
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Car car = null;
+        
+        try {
+            conn = DBConnection.getConnection();
+            String sql = "SELECT id, brand, model, price_per_day, available FROM cars WHERE id = ?";
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1, carId);
+            rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                car = new Car();
+                car.setId(rs.getInt("id"));
+                car.setBrand(rs.getString("brand"));
+                car.setModel(rs.getString("model"));
+                car.setPricePerDay(rs.getDouble("price_per_day"));
+                car.setAvailable(rs.getBoolean("available"));
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        // Check if car exists and is available
+        if (car == null) {
+            response.sendRedirect(request.getContextPath() + "/browse-cars");
+            return;
+        }
+        
+        if (!car.isAvailable()) {
+            request.setAttribute("error", "This car is no longer available.");
+            response.sendRedirect(request.getContextPath() + "/browse-cars");
+            return;
+        }
+        
+        // Store car in request and forward to booking form
+        request.setAttribute("car", car);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/book-car.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        // Check if user is logged in
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+        
+        Integer userId = (Integer) session.getAttribute("userId");
+        
+        // Get form data
+        String carIdStr = request.getParameter("carId");
+        String startDateStr = request.getParameter("startDate");
+        String endDateStr = request.getParameter("endDate");
+        
+        // Validate inputs
+        if (carIdStr == null || startDateStr == null || endDateStr == null ||
+            carIdStr.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            request.setAttribute("error", "All fields are required.");
+            doGet(request, response);
+            return;
+        }
+        
+        int carId = Integer.parseInt(carIdStr);
+        LocalDate startDate = LocalDate.parse(startDateStr);
+        LocalDate endDate = LocalDate.parse(endDateStr);
+        
+        // Validate dates
+        LocalDate today = LocalDate.now();
+        if (startDate.isBefore(today)) {
+            request.setAttribute("error", "Start date cannot be in the past.");
+            doGet(request, response);
+            return;
+        }
+        
+        if (endDate.isBefore(startDate)) {
+            request.setAttribute("error", "End date must be after start date.");
+            doGet(request, response);
+            return;
+        }
+        
+        // Calculate total price
+        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
+        if (daysBetween == 0) {
+            daysBetween = 1; // Minimum 1 day rental
+        }
+        
+        Connection conn = null;
+        PreparedStatement psGetCar = null;
+        PreparedStatement psInsertBooking = null;
+        PreparedStatement psUpdateCar = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+            
+            // Get car price and check availability
+            String sqlGetCar = "SELECT price_per_day, available FROM cars WHERE id = ? FOR UPDATE";
+            psGetCar = conn.prepareStatement(sqlGetCar);
+            psGetCar.setInt(1, carId);
+            rs = psGetCar.executeQuery();
+            
+            if (!rs.next()) {
+                throw new SQLException("Car not found");
+            }
+            
+            boolean available = rs.getBoolean("available");
+            if (!available) {
+                request.setAttribute("error", "This car is no longer available.");
+                conn.rollback();
+                doGet(request, response);
+                return;
+            }
+            
+            double pricePerDay = rs.getDouble("price_per_day");
+            double totalPrice = pricePerDay * daysBetween;
+            
+            // Insert booking
+            String sqlInsertBooking = "INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price) VALUES (?, ?, ?, ?, ?)";
+            psInsertBooking = conn.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS);
+            psInsertBooking.setInt(1, userId);
+            psInsertBooking.setInt(2, carId);
+            psInsertBooking.setDate(3, Date.valueOf(startDate));
+            psInsertBooking.setDate(4, Date.valueOf(endDate));
+            psInsertBooking.setDouble(5, totalPrice);
+            
+            int rowsInserted = psInsertBooking.executeUpdate();
+            
+            if (rowsInserted == 0) {
+                throw new SQLException("Failed to create booking");
+            }
+            
+            // Get generated booking ID
+            ResultSet generatedKeys = psInsertBooking.getGeneratedKeys();
+            int bookingId = 0;
+            if (generatedKeys.next()) {
+                bookingId = generatedKeys.getInt(1);
+            }
+            
+            // Update car availability to FALSE
+            String sqlUpdateCar = "UPDATE cars SET available = FALSE WHERE id = ?";
+            psUpdateCar = conn.prepareStatement(sqlUpdateCar);
+            psUpdateCar.setInt(1, carId);
+            psUpdateCar.executeUpdate();
+            
+            // Commit transaction
+            conn.commit();
+            
+            // Redirect to confirmation page
+            response.sendRedirect(request.getContextPath() + "/booking-confirmation?bookingId=" + bookingId);
+            
+        } catch (SQLException e) {
+            // Rollback on error
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            request.setAttribute("error", "Database error: " + e.getMessage());
+            e.printStackTrace();
+            doGet(request, response);
+            
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (psGetCar != null) psGetCar.close();
+                if (psInsertBooking != null) psInsertBooking.close();
+                if (psUpdateCar != null) psUpdateCar.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
