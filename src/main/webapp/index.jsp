@@ -12,7 +12,8 @@
     </head>
     <body>
         <h1>Car Rental System</h1>
-        <p>JSP is rendering. <a href="hello">Test Servlet</a></p>
-        <p><a href="dbtest">Test DB Connection</a></p>
+        <p><a href="<%= request.getContextPath() %>/login.jsp">Login</a></p>
+        <p><a href="<%= request.getContextPath() %>/register.jsp">Register</a></p>
+        <p><a href="<%= request.getContextPath() %>/dbtest">Test DB Connection</a></p>
     </body>
 </html>
