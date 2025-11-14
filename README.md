@@ -41,26 +41,25 @@ We included user authentication, car browsing, booking functionality, and connec
 ## Database Schema
 ### Database name: 'car_rental'
 Project consists of three tables 
-Users: id, name, email, password, role
-Cars: id, brand, model, price_per_day, available
-Bookings: id, user_id, car_id, start_date, end_date, total_price
+- Users: id, name, email, password, role
+- Cars: id, brand, model, price_per_day, available
+- Bookings: id, user_id, car_id, start_date, end_date, total_price
 ### Relationships
 - user -> bookings
 - car -> bookings
 ### SQL Script
-Our SQL script can be found by going in Files under the SQL directory.
-SQL/car_rental_schema.sql
+Our SQL script can be found by going in Files under the SQL directory. SQL/car_rental_schema.sql
 Running this script will generate our tables and include some sample user and cars.
 
 ## Backend Servlets
 ### Authentication Servlets
-RegisterServlet.java at /register allows for the creation of user accounts.
-LoginServlet.java at /login authenticates users 
-LougoutServlet.java at /logout ends user session
+- RegisterServlet.java at /register allows for the creation of user accounts.
+- LoginServlet.java at /login authenticates users 
+- LougoutServlet.java at /logout ends user session
 
 ### Application Servlets
-BrowseCarsServlet at /browse-cars displays available cars
-BookCarServlet at /book-car books selected car and saves it into the booking table
+- BrowseCarsServlet at /browse-cars displays available cars
+- BookCarServlet at /book-car books selected car and saves it into the booking table
 
 All of our servlets do/use the following:
 - JDBC
