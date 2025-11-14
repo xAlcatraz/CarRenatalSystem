@@ -81,6 +81,8 @@
     <% if (isLoggedIn) { %>
         <div class="user-info">
             Logged in as: <strong><%= userEmail %></strong> (Role: <%= userRole %>)
+            &nbsp; | &nbsp;
+            <a href="<%= request.getContextPath() %>/logout">Logout</a>
         </div>
     <% } else { %>
         <div class="user-info">

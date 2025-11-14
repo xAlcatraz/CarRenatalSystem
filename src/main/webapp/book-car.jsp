@@ -88,7 +88,6 @@
         LocalDate today = LocalDate.now();
         String minDate = today.toString();
     %>
-    
     <h1>Book Your Car</h1>
     
     <!-- Car Information -->

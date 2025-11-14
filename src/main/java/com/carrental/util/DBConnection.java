@@ -12,11 +12,10 @@ public class DBConnection {
         "jdbc:mysql://localhost:3306/car_rental?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
 
     private static String URL  = DEFAULT_URL;
-    private static String USER = "__MISSING__";  // force obvious failure if props not loaded
+    private static String USER = "__MISSING__"; 
     private static String PASS = "__MISSING__";
 
     static {
-        // 1) Ensure driver is present
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             System.out.println("[DB DEBUG] MySQL driver loaded.");
@@ -24,8 +23,7 @@ public class DBConnection {
             System.out.println("[DB DEBUG] Driver NOT found: " + e.getMessage());
         }
 
-        // 2) Load db.properties from classpath
-        boolean loaded = false;   // <— you were missing this variable
+        boolean loaded = false;
         try (InputStream in = DBConnection.class
                 .getClassLoader()
                 .getResourceAsStream("db.properties")) {
@@ -47,7 +45,6 @@ public class DBConnection {
                            " USER=" + USER +
                            " PASS_EMPTY=" + (PASS == null || PASS.isEmpty()));
 
-        // 3) Fail loudly if props missing so we don’t silently use root/empty
         if ("__MISSING__".equals(USER) || "__MISSING__".equals(PASS)) {
             throw new RuntimeException("db.properties not loaded or missing db.user/db.pass");
         }

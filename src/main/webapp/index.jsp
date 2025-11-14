@@ -88,10 +88,18 @@
     <div class="container">
         <h1>Car Rental System</h1>
         <ul class="nav-links">
+            <%
+            String email = (String) session.getAttribute("userEmail");
+            boolean loggedIn = (email != null);
+            %>
+            <% if (loggedIn) { %>
             <li><a href="<%= request.getContextPath() %>/browse-cars" class="primary-link">Browse Available Cars</a></li>
-            <li><a href="<%= request.getContextPath() %>/login.jsp">Login</a></li>
-            <li><a href="<%= request.getContextPath() %>/register.jsp">Register</a></li>
-            <li><a href="<%= request.getContextPath() %>/dbtest">Test DB Connection</a></li>
+            <li><a href="<%= request.getContextPath() %>/logout">Logout</a></li>
+            <% } else { %>
+                <li><a href="<%= request.getContextPath() %>/browse-cars" class="primary-link">Browse Available Cars</a></li>
+                <li><a href="<%= request.getContextPath() %>/login.jsp">Login</a></li>
+                <li><a href="<%= request.getContextPath() %>/register.jsp">Register</a></li>
+            <% } %>
         </ul>
     </div>
 </body>
