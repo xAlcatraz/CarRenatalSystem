@@ -173,7 +173,7 @@
     <h2>Select Rental Dates and Times</h2>
     
     <div class="note">
-        <strong>Note:</strong> The car will be marked as unavailable once you complete the booking. Price is calculated at $<%= String.format("%.2f", pricePerDay / 24) %> per hour.
+        <strong>Note:</strong> Price is calculated at $<%= String.format("%.2f", pricePerDay / 24) %> per hour.
     </div>
     
     <form method="POST" action="<%= request.getContextPath() %>/book-car">

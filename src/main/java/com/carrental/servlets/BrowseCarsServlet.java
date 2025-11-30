@@ -40,9 +40,9 @@ public class BrowseCarsServlet extends HttpServlet {
             conn = DBConnection.getConnection();
             
             // Reset all cars to available when page loads
-//            resetStmt = conn.createStatement();
-//            resetStmt.executeUpdate("UPDATE cars SET available = TRUE");
-//            resetStmt.close();
+            resetStmt = conn.createStatement();
+            resetStmt.executeUpdate("UPDATE cars SET available = TRUE");
+            resetStmt.close();
             
             // Build dynamic SQL query based on filters
             StringBuilder sql = new StringBuilder(

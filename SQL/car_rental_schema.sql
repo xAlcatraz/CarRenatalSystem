@@ -30,7 +30,9 @@ CREATE TABLE bookings (
   user_id INT NOT NULL,
   car_id INT NOT NULL,
   start_date DATE NOT NULL,
+  start_time TIME NOT NULL,
   end_date DATE NOT NULL,
+  end_time TIME NOT NULL,
   total_price DECIMAL(10,2) NOT NULL,
   CONSTRAINT fk_b_user FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_b_car  FOREIGN KEY (car_id)  REFERENCES cars(id)

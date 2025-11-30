@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.carrental.servlets;
 
 import com.carrental.util.DBConnection;
@@ -11,8 +7,9 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.*;
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Duration;
 
 @WebServlet("/book-car")
 public class BookCarServlet extends HttpServlet {
@@ -57,9 +54,9 @@ public class BookCarServlet extends HttpServlet {
                 car.setId(rs.getInt("id"));
                 car.setBrand(rs.getString("brand"));
                 car.setModel(rs.getString("model"));
-                car.setCarType(rs.getString("car_type"));          // NEW
-                car.setCapacity(rs.getInt("capacity"));            // NEW
-                car.setFuelType(rs.getString("fuel_type"));        // NEW
+                car.setCarType(rs.getString("car_type"));
+                car.setCapacity(rs.getInt("capacity"));
+                car.setFuelType(rs.getString("fuel_type"));
                 car.setPricePerDay(rs.getDouble("price_per_day"));
                 car.setAvailable(rs.getBoolean("available"));
             }
@@ -111,10 +108,10 @@ public class BookCarServlet extends HttpServlet {
         String carIdStr = request.getParameter("carId");
         String startDateStr = request.getParameter("startDate");
         String endDateStr = request.getParameter("endDate");
-        String startTimeStr = request.getParameter("startTime");  // NEW
-        String endTimeStr = request.getParameter("endTime");      // NEW
+        String startTimeStr = request.getParameter("startTime");
+        String endTimeStr = request.getParameter("endTime");
 
-        // Validate inputs - update this section:
+        // Validate inputs
         if (carIdStr == null || startDateStr == null || endDateStr == null ||
             startTimeStr == null || endTimeStr == null ||
             carIdStr.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty() ||
@@ -125,27 +122,36 @@ public class BookCarServlet extends HttpServlet {
         }
         
         int carId = Integer.parseInt(carIdStr);
-        LocalDate startDate = LocalDate.parse(startDateStr);
-        LocalDate endDate = LocalDate.parse(endDateStr);
         
-        // Validate dates
-        LocalDate today = LocalDate.now();
-        if (startDate.isBefore(today)) {
-            request.setAttribute("error", "Start date cannot be in the past.");
+        // Parse date + time together to create LocalDateTime
+        LocalDateTime startDateTime = LocalDateTime.parse(startDateStr + "T" + startTimeStr);
+        LocalDateTime endDateTime = LocalDateTime.parse(endDateStr + "T" + endTimeStr);
+        
+        // Also parse just the times for storage
+        LocalTime startTime = LocalTime.parse(startTimeStr);
+        LocalTime endTime = LocalTime.parse(endTimeStr);
+        
+        // Validate date/times
+        LocalDateTime now = LocalDateTime.now();
+        if (startDateTime.isBefore(now)) {
+            request.setAttribute("error", "Start date/time cannot be in the past.");
             doGet(request, response);
             return;
         }
         
-        if (endDate.isBefore(startDate)) {
-            request.setAttribute("error", "End date must be after start date.");
+        if (endDateTime.isBefore(startDateTime) || endDateTime.isEqual(startDateTime)) {
+            request.setAttribute("error", "End date/time must be after start date/time.");
             doGet(request, response);
             return;
         }
         
-        // Calculate total price
-        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
-        if (daysBetween == 0) {
-            daysBetween = 1; // Minimum 1 day rental
+        // Calculate total hours between start and end
+        Duration duration = Duration.between(startDateTime, endDateTime);
+        double totalHours = duration.toHours() + (duration.toMinutesPart() / 60.0);
+        
+        // Minimum 1 hour rental
+        if (totalHours < 1) {
+            totalHours = 1;
         }
         
         Connection conn = null;
@@ -176,17 +182,21 @@ public class BookCarServlet extends HttpServlet {
                 return;
             }
             
+            // Calculate price using hourly rate
             double pricePerDay = rs.getDouble("price_per_day");
-            double totalPrice = pricePerDay * daysBetween;
+            double pricePerHour = pricePerDay / 24.0;
+            double totalPrice = totalHours * pricePerHour;
             
-            // Insert booking
-            String sqlInsertBooking = "INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price) VALUES (?, ?, ?, ?, ?)";
+            // Insert booking WITH times now
+            String sqlInsertBooking = "INSERT INTO bookings (user_id, car_id, start_date, start_time, end_date, end_time, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
             psInsertBooking = conn.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS);
             psInsertBooking.setInt(1, userId);
             psInsertBooking.setInt(2, carId);
-            psInsertBooking.setDate(3, Date.valueOf(startDate));
-            psInsertBooking.setDate(4, Date.valueOf(endDate));
-            psInsertBooking.setDouble(5, totalPrice);
+            psInsertBooking.setDate(3, Date.valueOf(startDateTime.toLocalDate()));
+            psInsertBooking.setTime(4, Time.valueOf(startTime));  // NEW: Store start time
+            psInsertBooking.setDate(5, Date.valueOf(endDateTime.toLocalDate()));
+            psInsertBooking.setTime(6, Time.valueOf(endTime));    // NEW: Store end time
+            psInsertBooking.setDouble(7, totalPrice);
             
             int rowsInserted = psInsertBooking.executeUpdate();
             
@@ -242,4 +252,3 @@ public class BookCarServlet extends HttpServlet {
         }
     }
 }
-
