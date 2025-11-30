@@ -8,6 +8,9 @@ public class Car {
     private int id;
     private String brand;
     private String model;
+    private String carType;
+    private int capacity;
+    private String fuelType;
     private double pricePerDay;
     private boolean available;
     
@@ -44,6 +47,18 @@ public class Car {
         return available;
     }
     
+    public String getCarType() {
+        return carType;
+    }
+    
+     public int getCapacity() {
+        return capacity;
+    }
+     
+    public String getFuelType() {
+        return fuelType;
+    }
+    
     // Setters
     public void setId(int id) {
         this.id = id;
@@ -63,6 +78,18 @@ public class Car {
     
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+    
+    public void setCarType(String carType) {
+        this.carType = carType;
+    }
+    
+     public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+     
+    public void setFuelType(String fuelType) {
+        this.fuelType = fuelType;
     }
     
     // Helper method for display

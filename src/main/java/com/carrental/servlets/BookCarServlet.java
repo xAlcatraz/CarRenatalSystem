@@ -47,16 +47,19 @@ public class BookCarServlet extends HttpServlet {
         
         try {
             conn = DBConnection.getConnection();
-            String sql = "SELECT id, brand, model, price_per_day, available FROM cars WHERE id = ?";
+            String sql = "SELECT id, brand, model, car_type, capacity, fuel_type, price_per_day, available FROM cars WHERE id = ?";
             ps = conn.prepareStatement(sql);
             ps.setInt(1, carId);
             rs = ps.executeQuery();
-            
+
             if (rs.next()) {
                 car = new Car();
                 car.setId(rs.getInt("id"));
                 car.setBrand(rs.getString("brand"));
                 car.setModel(rs.getString("model"));
+                car.setCarType(rs.getString("car_type"));          // NEW
+                car.setCapacity(rs.getInt("capacity"));            // NEW
+                car.setFuelType(rs.getString("fuel_type"));        // NEW
                 car.setPricePerDay(rs.getDouble("price_per_day"));
                 car.setAvailable(rs.getBoolean("available"));
             }
@@ -108,10 +111,14 @@ public class BookCarServlet extends HttpServlet {
         String carIdStr = request.getParameter("carId");
         String startDateStr = request.getParameter("startDate");
         String endDateStr = request.getParameter("endDate");
-        
-        // Validate inputs
+        String startTimeStr = request.getParameter("startTime");  // NEW
+        String endTimeStr = request.getParameter("endTime");      // NEW
+
+        // Validate inputs - update this section:
         if (carIdStr == null || startDateStr == null || endDateStr == null ||
-            carIdStr.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            startTimeStr == null || endTimeStr == null ||
+            carIdStr.isEmpty() || startDateStr.isEmpty() || endDateStr.isEmpty() ||
+            startTimeStr.isEmpty() || endTimeStr.isEmpty()) {
             request.setAttribute("error", "All fields are required.");
             doGet(request, response);
             return;
