@@ -4,16 +4,19 @@
  */
 package com.carrental.servlets.auth;
 
-import com.carrental.dao.UserDAO;
-import com.carrental.model.User;
-import java.io.IOException;
-import java.sql.SQLException;
+import com.carrental.util.DBConnection;
+import com.carrental.util.PasswordUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  *
@@ -21,40 +24,57 @@ import jakarta.servlet.http.HttpSession;
  */
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
-    private final UserDAO userDAO = new UserDAO();
-    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        
         String email = request.getParameter("email");
         String password = request.getParameter("password");
         
-        if (email == null || password == null || email.isBlank() || password.isBlank()){
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+        if (email != null)
+            email = email.trim();
+            
+        if (email == null || email.isEmpty() || password == null || password.isEmpty()){
+            request.setAttribute("error", "Email and Password Required.");
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
         
-        try {
-            boolean valid = userDAO.validateLogin(email, password);
-            if (valid){
-                User user = userDAO.findByEmail(email);
-                HttpSession session = request.getSession(true);
-                session.setAttribute("userId", user.getId());
-                session.setAttribute("userEmail", user.getEmail());
-                session.setAttribute("userRole", user.getRole());
-                response.sendRedirect(request.getContextPath() + "/browse-cars");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/login.jsp?err=1");
+        String storedHash = null;
+        String name       = null;
+        String role       = null;
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement sm = conn.prepareStatement(
+                "SELECT id, name, email, password_hash, role FROM users WHERE email = ?")){
+            sm.setString(1, email);
+            try(ResultSet rs = sm.executeQuery()){
+                if (rs.next()){
+                    storedHash = rs.getString("password_hash");
+                    name       = rs.getString("name");
+                    role       = rs.getString("role");
+                }
             }
-        } catch (SQLException e) {
+        } catch (SQLException e){
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database Error");
+            request.setAttribute("error", "Database Error: Login: " + e.getMessage());
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
         }
-    }
-    
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        
+        boolean ok = PasswordUtil.checkPassword(password, storedHash);
+        if (!ok){
+            request.setAttribute("error", "Invalid Email or Password.");
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
+        }
+        
+        HttpSession session = request.getSession(true);
+        session.setAttribute("userEmail", email);
+        session.setAttribute("userName",  name);
+        session.setAttribute("userRole",  role != null ? role : "user");
+        
+        response.sendRedirect(request.getContextPath() + "/browse-cars");
     }
 }

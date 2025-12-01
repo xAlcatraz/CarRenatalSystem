@@ -20,8 +20,11 @@ public class BookCarServlet extends HttpServlet {
         
         // Check if user is logged in
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            // Not logged in - redirect to login
+        String userEmail = null;
+        if (session != null){
+            userEmail = (String) session.getAttribute("userEmail");
+        }
+        if (userEmail == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }

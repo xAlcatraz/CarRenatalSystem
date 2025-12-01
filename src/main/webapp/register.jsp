@@ -112,46 +112,52 @@
     <body>
         <%
             String error = (String) request.getAttribute("error");
-            String message = (String) request.getAttribute("message");
+            String nameVal  = (String) request.getAttribute("name");
+            String emailVal = (String) request.getAttribute("email");
+            if (nameVal == null)  nameVal = "";
+            if (emailVal == null) emailVal = "";
         %>
-        
+
         <div class="container">
             <h1>Create Account</h1>
-            
+
             <% if (error != null) { %>
                 <div class="error">
                     <%= error %>
                 </div>
             <% } %>
-            
-            <% if (message != null) { %>
-                <div class="error" style="border-color:#4CAF50;background-color:#e8f5e9;color:#2e7d32;">
-                <%= message %>
-                </div>
-            <% } %>
-            
+
             <form method="post" action="<%= request.getContextPath() %>/register">
                 <div class="form-group">
                     <label for="name">Full Name</label>
-                    <input id="name" name="name" type="text" required>
+                    <input id="name" name="name" type="text" value="<%= nameVal %>" required>
                 </div>
+
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input id="email" name="email" type="email" required>
+                    <input id="email" name="email" type="email" value="<%= emailVal %>" required>
                 </div>
+
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input id="password" name="password" type="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Register</button>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Register</button>
             </form>
-                
+
             <div class="links">
                 <p>
+                    Already have an account?
                     <a href="<%= request.getContextPath() %>/login.jsp">Back to Login</a>
                 </p>
                 <p>
-                    <a href="<%= request.getContextPath() %>/index.jsp">Back to Main Menu</a>
+                    <a href="<%= request.getContextPath() %>/index.jsp">Back to Home</a>
                 </p>
             </div>
         </div>

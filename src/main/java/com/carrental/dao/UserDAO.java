@@ -51,13 +51,4 @@ public class UserDAO {
             }
         }
     }
-    
-    public boolean validateLogin(String email, String password) throws SQLException {
-        User user = findByEmail(email);
-        if (user == null){
-            return false;
-        }
-        
-        return user.getPasswordHash().equals(password);
-    }
 }

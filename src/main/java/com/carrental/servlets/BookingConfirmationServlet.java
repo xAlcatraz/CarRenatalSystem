@@ -21,13 +21,15 @@ public class BookingConfirmationServlet extends HttpServlet {
         
         // Check if user is logged in
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+        String userEmail = null;
+        if (session != null) {
+            userEmail = (String) session.getAttribute("userEmail");
+        }
+        
+        if (userEmail == null || userEmail.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
-        
-        // Get user info from session
-        String userEmail = (String) session.getAttribute("userEmail");
         
         String bookingIdStr = request.getParameter("bookingId");
         
