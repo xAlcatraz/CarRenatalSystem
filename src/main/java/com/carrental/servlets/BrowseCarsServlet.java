@@ -19,9 +19,9 @@ public class BrowseCarsServlet extends HttpServlet {
             throws ServletException, IOException {
         
         // Get filter parameters from the request
-        String[] carTypes = request.getParameterValues("carType");
+        String[] carTypes = request.getParameterValues("type");
         String[] capacities = request.getParameterValues("capacity");
-        String[] fuelTypes = request.getParameterValues("fuelType");
+        String[] fuelTypes = request.getParameterValues("fuel");
         
         // Get session info (if user is logged in)
         HttpSession session = request.getSession(false);

@@ -7,260 +7,537 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.List"%>
 <%@page import="com.carrental.model.Car"%>
+
+<%
+    // Session info
+    String userEmail = (String) session.getAttribute("userEmail");
+    String userName  = (String) session.getAttribute("userName");
+    String userRole  = (String) session.getAttribute("userRole");
+    boolean loggedIn = (userEmail != null);
+    boolean isAdmin  = "admin".equals(userRole);
+
+    // Data from servlet
+    List<Car> carList      = (List<Car>) request.getAttribute("carList");
+    String errorMessage    = (String) request.getAttribute("errorMessage");
+%>
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Browse Cars</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px;
-            background-color: white;
-        }
-        h1 {
-            color: #333;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .filter-section {
-            width: 250px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            height: fit-content;
-        }
-        .filter-section h2 {
-            color: #333;
-            margin-top: 0;
-            font-size: 1.3em;
-        }
-        .filter-group {
-            margin-bottom: 20px;
-        }
-        .filter-group strong {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-        }
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            cursor: pointer;
-        }
-        .filter-group input[type="checkbox"] {
-            margin-right: 8px;
-        }
-        .filter-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .filter-buttons button {
-            padding: 8px 15px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .filter-buttons button:hover {
-            background-color: #45a049;
-        }
-        .filter-buttons a {
-            padding: 8px 15px;
-            background-color: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
-            text-align: center;
-            text-decoration: none;
-            display: block;
-        }
-        .filter-buttons a:hover {
-            background-color: #e0e0e0;
-        }
-        .main-content {
-            flex: 1;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0;
-        }
-        th, td { 
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th { 
-            background-color: #f0f0f0;
-        }
-        a {
-            color: blue;
-            text-decoration: underline;
-        }
-        .error {
-            color: red;
-            border: 1px solid red;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        .user-info {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-        }
-    </style>
-</head>
-<body>
-    <%
-        // Get data from servlet
-        List<Car> carList = (List<Car>) request.getAttribute("carList");
-        String errorMessage = (String) request.getAttribute("errorMessage");
-        
-        // Get session info
-        String userEmail = null;
-        String userRole = null;
-        if (session != null) {
-            userEmail = (String) session.getAttribute("userEmail");
-            userRole = (String) session.getAttribute("userRole");
-        }
-        
-        boolean isLoggedIn = (userEmail != null);
-    %>
-    
-    <h1>Browse Available Cars</h1>
-    
-    <!-- User info -->
-    <% if (isLoggedIn) { %>
-        <div class="user-info">
-            Logged in as: <strong><%= userEmail %></strong> (Role: <%= userRole %>)
-            &nbsp; | &nbsp;
-            <a href="<%= request.getContextPath() %>/logout">Logout</a>
-        </div>
-    <% } else { %>
-        <div class="user-info">
-            Not logged in. <a href="<%= request.getContextPath() %>/login.jsp">Login</a> or 
-            <a href="<%= request.getContextPath() %>/register.jsp">Register</a> to book cars.
-        </div>
-    <% } %>
-    
-    <!-- Show error if any -->
-    <% if (errorMessage != null) { %>
-        <div class="error">
-            ERROR: <%= errorMessage %>
-        </div>
-    <% } %>
-    
-    <%
-    // Get the selected filter values to keep checkboxes checked
-    String[] selectedCarTypes = request.getParameterValues("carType");
-    String[] selectedCapacities = request.getParameterValues("capacity");
-    String[] selectedFuelTypes = request.getParameterValues("fuelType");
-    %>
+    <head>
+        <meta charset="UTF-8">
+        <title>Browse Cars - B&amp;D Car Rentals</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-    <%!
-    // Helper method to check if a value is in the array (JSP Declaration)
-    private boolean isChecked(String[] array, String value) {
-        if (array == null) return false;
-        for (String item : array) {
-            if (item.equals(value)) return true;
-        }
-        return false;
-    }
-    %>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
 
-    <div class="container">
-    
-        <!-- Filter Section -->
-        <div class="filter-section">
-            <h2>Filters</h2>
-            <form method="get" action="<%= request.getContextPath() %>/browse-cars">
+            /* NAVBAR – same look as index.jsp */
+            .navbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 32px;
+                background-color: #1f2933;
+                color: #fff;
+                min-height: 64px;
+            }
 
-                <!-- Car Type Filter -->
-                <div class="filter-group">
-                    <strong>Car Type:</strong>
-                    <label><input type="checkbox" name="carType" value="Sedan" <%= isChecked(selectedCarTypes, "Sedan") ? "checked" : "" %>> Sedan</label>
-                    <label><input type="checkbox" name="carType" value="SUV" <%= isChecked(selectedCarTypes, "SUV") ? "checked" : "" %>> SUV</label>
-                    <label><input type="checkbox" name="carType" value="Truck" <%= isChecked(selectedCarTypes, "Truck") ? "checked" : "" %>> Truck</label>
+            .nav-left,
+            .nav-right {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .nav-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 8px 16px;
+                border-radius: 999px;
+                background-color: #2d3748;
+                color: #e2e8f0;
+                text-decoration: none;
+                font-size: 14px;
+                border: 1px solid #4a5568;
+                transition: background-color 0.15s ease, color 0.15s ease,
+                            transform 0.05s ease;
+            }
+
+            .nav-pill:hover {
+                background-color: #38a169;
+                color: #fff;
+                transform: translateY(-1px);
+            }
+
+            .nav-brand {
+                font-weight: bold;
+                font-size: 16px;
+                background-color: #2f855a;
+            }
+
+            .user-menu {
+                position: relative;
+                display: inline-block;
+            }
+
+            .user-button {
+                display: inline-flex;
+                align-items: center;
+                padding: 8px 16px;
+                border-radius: 999px;
+                background-color: #2d3748;
+                color: #e2e8f0;
+                border: 1px solid #4a5568;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .user-button:hover {
+                background-color: #38a169;
+                color: #fff;
+            }
+
+            .user-button .caret {
+                margin-left: 6px;
+                font-size: 10px;
+            }
+
+            .user-dropdown {
+                display: none;
+                position: absolute;
+                right: 0;
+                margin-top: 6px;
+                background: #fff;
+                color: #333;
+                min-width: 170px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                z-index: 10;
+                overflow: hidden;
+            }
+
+            .dropdown-item {
+                display: block;
+                padding: 8px 12px;
+                color: #333;
+                text-decoration: none;
+                font-size: 14px;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f0f0f0;
+            }
+
+            .user-menu.open .user-dropdown {
+                display: block;
+            }
+
+            /* PAGE LAYOUT */
+            .page-container {
+                flex: 1;
+                display: flex;
+                padding: 24px 32px;
+                gap: 24px;
+            }
+
+            .filters-card {
+                width: 260px;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+                padding: 18px 20px;
+            }
+
+            .filters-card h2 {
+                font-size: 18px;
+                margin-bottom: 12px;
+                color: #2d3748;
+            }
+
+            .filter-group {
+                margin-bottom: 16px;
+            }
+
+            .filter-group-title {
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 6px;
+                color: #4a5568;
+            }
+
+            .filter-option {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                color: #4a5568;
+                margin-bottom: 4px;
+            }
+
+            .filter-buttons {
+                margin-top: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            /* REUSABLE BUTTON STYLE */
+            .btn {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                padding: 8px 14px;
+                border-radius: 999px;
+                font-size: 14px;
+                border: 1px solid #4a5568;
+                background-color: #2d3748;
+                color: #e2e8f0;
+                text-decoration: none;
+                cursor: pointer;
+                transition: background-color 0.15s ease,
+                            color 0.15s ease,
+                            transform 0.05s ease;
+            }
+
+            .btn:hover {
+                background-color: #38a169;
+                color: #fff;
+                transform: translateY(-1px);
+            }
+
+            .btn-primary {
+                background-color: #38a169;
+                border-color: #38a169;
+                color: #fff;
+            }
+
+            .btn-secondary {
+                background-color: #edf2f7;
+                border-color: #cbd5e0;
+                color: #2d3748;
+            }
+
+            .btn-secondary:hover {
+                background-color: #e2e8f0;
+                color: #1a202c;
+            }
+
+            .cars-card {
+                flex: 1;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+                padding: 18px 20px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .cars-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 12px;
+            }
+
+            .cars-header h1 {
+                font-size: 22px;
+                color: #2d3748;
+            }
+
+            .cars-header span {
+                font-size: 13px;
+                color: #718096;
+            }
+
+            .error {
+                margin-bottom: 10px;
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #e53e3e;
+                background-color: #fff5f5;
+                color: #c53030;
+                font-size: 14px;
+            }
+
+            .user-info-bar {
+                margin-bottom: 10px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                background-color: #ebf8ff;
+                border: 1px solid #bee3f8;
+                font-size: 13px;
+                color: #2b6cb0;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 8px 10px;
+                border-bottom: 1px solid #e2e8f0;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f7fafc;
+                font-weight: 600;
+                color: #4a5568;
+            }
+
+            tr:hover td {
+                background-color: #f7fafc;
+            }
+
+            .action-link {
+                text-decoration: none;
+                font-size: 13px;
+                color: #3182ce;
+            }
+
+            .action-link:hover {
+                text-decoration: underline;
+            }
+
+            .empty-message {
+                margin-top: 20px;
+                font-size: 14px;
+                color: #4a5568;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- NAVBAR -->
+        <div class="navbar">
+            <div class="nav-left">
+                <a href="<%= request.getContextPath() %>/index.jsp"
+                   class="nav-pill nav-brand">
+                    B&amp;D Car Rentals
+                </a>
+                <a href="<%= request.getContextPath() %>/index.jsp"
+                   class="nav-pill">
+                    Home
+                </a>
+                <a href="<%= request.getContextPath() %>/browse-cars"
+                   class="nav-pill">
+                    Browse Cars
+                </a>
+            </div>
+
+            <div class="nav-right">
+                <% if (!loggedIn) { %>
+                    <a href="<%= request.getContextPath() %>/login.jsp"
+                       class="nav-pill">
+                        Login
+                    </a>
+                    <a href="<%= request.getContextPath() %>/register.jsp"
+                       class="nav-pill">
+                        Register
+                    </a>
+                <% } else { %>
+                    <div class="user-menu">
+                        <button class="user-button">
+                            <span>
+                                <%= (userName != null && !userName.isEmpty())
+                                    ? userName : userEmail %>
+                                <% if (isAdmin) { %> (admin) <% } %>
+                            </span>
+                            <span class="caret">▼</span>
+                        </button>
+                        <div class="user-dropdown">
+                            <a href="<%= request.getContextPath() %>/my-bookings"
+                               class="dropdown-item">
+                                My Bookings
+                            </a>
+                            <% if (isAdmin) { %>
+                                <a href="<%= request.getContextPath() %>/admin/cars"
+                                   class="dropdown-item">
+                                    Admin Dashboard
+                                </a>
+                            <% } %>
+                            <a href="<%= request.getContextPath() %>/logout"
+                               class="dropdown-item">
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- PAGE CONTENT -->
+        <div class="page-container">
+
+            <!-- FILTERS -->
+            <div class="filters-card">
+                <h2>Filters</h2>
+
+                <!-- keep your existing filter inputs / names here -->
+                <form method="get" action="<%= request.getContextPath() %>/browse-cars">
+
+                    <div class="filter-group">
+                        <div class="filter-group-title">Car Type:</div>
+                        <label class="filter-option">
+                            <input type="checkbox" name="type" value="Sedan"> Sedan
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="type" value="SUV"> SUV
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="type" value="Truck"> Truck
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <div class="filter-group-title">Capacity:</div>
+                        <label class="filter-option">
+                            <input type="checkbox" name="capacity" value="5"> 5 passengers
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="capacity" value="6"> 6 passengers
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <div class="filter-group-title">Fuel Type:</div>
+                        <label class="filter-option">
+                            <input type="checkbox" name="fuel" value="Gas"> Gas
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="fuel" value="Diesel"> Diesel
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="fuel" value="Electric"> Electric
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="fuel" value="Hybrid"> Hybrid
+                        </label>
+                    </div>
+
+                    <div class="filter-buttons">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="<%= request.getContextPath() %>/browse-cars"
+                           class="btn btn-secondary">Clear Filters</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- CARS TABLE -->
+            <div class="cars-card">
+                <div class="cars-header">
+                    <h1>Browse Available Cars</h1>
+                    <% if (carList != null) { %>
+                        <span><%= carList.size() %> Available Cars</span>
+                    <% } %>
                 </div>
 
-                <!-- Capacity Filter -->
-                <div class="filter-group">
-                    <strong>Capacity:</strong>
-                    <label><input type="checkbox" name="capacity" value="5" <%= isChecked(selectedCapacities, "5") ? "checked" : "" %>> 5 passengers</label>
-                    <label><input type="checkbox" name="capacity" value="6" <%= isChecked(selectedCapacities, "6") ? "checked" : "" %>> 6 passengers</label>
-                </div>
+                <% if (loggedIn) { %>
+                    <div class="user-info-bar">
+                        Logged in as <strong><%= userEmail %></strong>
+                        (Role: <%= isAdmin ? "admin" : "user" %>)
+                    </div>
+                <% } else { %>
+                    <div class="user-info-bar">
+                        Not logged in. <a href="<%= request.getContextPath() %>/login.jsp">Login</a>
+                        or <a href="<%= request.getContextPath() %>/register.jsp">Register</a> to book cars.
+                    </div>
+                <% } %>
 
-                <!-- Fuel Type Filter -->
-                <div class="filter-group">
-                    <strong>Fuel Type:</strong>
-                    <label><input type="checkbox" name="fuelType" value="Gas" <%= isChecked(selectedFuelTypes, "Gas") ? "checked" : "" %>> Gas</label>
-                    <label><input type="checkbox" name="fuelType" value="Diesel" <%= isChecked(selectedFuelTypes, "Diesel") ? "checked" : "" %>> Diesel</label>
-                    <label><input type="checkbox" name="fuelType" value="Electric" <%= isChecked(selectedFuelTypes, "Electric") ? "checked" : "" %>> Electric</label>
-                    <label><input type="checkbox" name="fuelType" value="Hybrid" <%= isChecked(selectedFuelTypes, "Hybrid") ? "checked" : "" %>> Hybrid</label>
-                </div>
+                <% if (errorMessage != null) { %>
+                    <div class="error">
+                        ERROR: <%= errorMessage %>
+                    </div>
+                <% } %>
 
-                <div class="filter-buttons">
-                    <button type="submit">Apply Filters</button>
-                    <a href="<%= request.getContextPath() %>/browse-cars">Clear Filters</a>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Main Content Section -->
-        <div class="main-content">
-            <!-- Cars table -->
-            <% if (carList != null && !carList.isEmpty()) { %>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Brand</th>
-                            <th>Model</th>
-                            <th>Type</th>       
-                            <th>Capacity</th>  
-                            <th>Fuel Type</th> 
-                            <th>Price per Day</th>
-                            <th>Available</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% for (Car car : carList) { %>
+                <% if (carList != null && !carList.isEmpty()) { %>
+                    <table>
+                        <thead>
                             <tr>
-                                <td><%= car.getId() %></td>
-                                <td><%= car.getBrand() %></td>
-                                <td><%= car.getModel() %></td>
-                                <td><%= car.getCarType() %></td>
-                                <td><%= car.getCapacity() %></td>
-                                <td><%= car.getFuelType() %></td>
-                                <td>$<%= String.format("%.2f", car.getPricePerDay()) %></td>
-                                <td><%= car.isAvailable() ? "Yes" : "No" %></td>
-                                <td>
-                                    <% if (isLoggedIn) { %>
-                                        <a href="<%= request.getContextPath() %>/book-car?carId=<%= car.getId() %>">Book</a>
-                                    <% } else { %>
-                                        <a href="<%= request.getContextPath() %>/login.jsp">Login to Book</a>
-                                    <% } %>
-                                </td>
+                                <th>ID</th>
+                                <th>Brand</th>
+                                <th>Model</th>
+                                <th>Type</th>
+                                <th>Capacity</th>
+                                <th>Fuel Type</th>
+                                <th>Price per Day</th>
+                                <th>Available</th>
+                                <th>Action</th>
                             </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-                
-                <p>Total cars available: <%= carList.size() %></p>
-            <% } else { %>
-                <p>No cars match your filter criteria.</p>
-            <% } %>
-            
-            <hr>
-            <p><a href="<%= request.getContextPath() %>/index.jsp">Back to Home</a></p>
+                        </thead>
+                        <tbody>
+                            <% for (Car car : carList) { %>
+                                <tr>
+                                    <td><%= car.getId() %></td>
+                                    <td><%= car.getBrand() %></td>
+                                    <td><%= car.getModel() %></td>
+                                    <td><%= car.getCarType() %></td>
+                                    <td><%= car.getCapacity() %></td>
+                                    <td><%= car.getFuelType() %></td>
+                                    <td>$<%= String.format("%.2f", car.getPricePerDay()) %></td>
+                                    <td><%= car.isAvailable() ? "Yes" : "No" %></td>
+                                    <td>
+                                        <% if (loggedIn) { %>
+                                            <% if (car.isAvailable()) { %>
+                                                <a class="action-link"
+                                                   href="<%= request.getContextPath() %>/book-car?carId=<%= car.getId() %>">
+                                                    Book
+                                                </a>
+                                            <% } else { %>
+                                                Unavailable
+                                            <% } %>
+                                        <% } else { %>
+                                            <a class="action-link"
+                                               href="<%= request.getContextPath() %>/login.jsp">
+                                                Login to Book
+                                            </a>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                <% } else { %>
+                    <p class="empty-message">No cars match your filter criteria.</p>
+                <% } %>
+            </div>
         </div>
-    </div>
-</body>
-</html>
 
+        <script>
+            // Same dropdown behaviour as index.jsp
+            document.addEventListener('DOMContentLoaded', function () {
+                var userMenu = document.querySelector('.user-menu');
+                if (!userMenu) return;
+
+                var button = userMenu.querySelector('.user-button');
+                var dropdown = userMenu.querySelector('.user-dropdown');
+
+                if (!button || !dropdown) return;
+
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    userMenu.classList.toggle('open');
+                });
+
+                document.addEventListener('click', function () {
+                    userMenu.classList.remove('open');
+                });
+
+                dropdown.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            });
+        </script>
+    </body>
+</html>
