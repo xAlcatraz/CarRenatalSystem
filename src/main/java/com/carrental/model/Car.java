@@ -13,6 +13,7 @@ public class Car {
     private String fuelType;
     private double pricePerDay;
     private boolean available;
+    private String imagePath;
     
     // Default constructor
     public Car() {}
@@ -59,6 +60,10 @@ public class Car {
         return fuelType;
     }
     
+    public String getImagePath() {
+        return imagePath;
+    }
+    
     // Setters
     public void setId(int id) {
         this.id = id;
@@ -90,6 +95,10 @@ public class Car {
      
     public void setFuelType(String fuelType) {
         this.fuelType = fuelType;
+    }
+    
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
     
     // Helper method for display

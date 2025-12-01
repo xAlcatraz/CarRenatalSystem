@@ -45,11 +45,13 @@ public class LoginServlet extends HttpServlet {
         String storedHash = null;
         String name       = null;
         String role       = null;
+        Integer userId    = null;
         try (Connection conn = DBConnection.getConnection(); PreparedStatement sm = conn.prepareStatement(
                 "SELECT id, name, email, password_hash, role FROM users WHERE email = ?")){
             sm.setString(1, email);
             try(ResultSet rs = sm.executeQuery()){
                 if (rs.next()){
+                    userId    = rs.getInt("id");
                     storedHash = rs.getString("password_hash");
                     name       = rs.getString("name");
                     role       = rs.getString("role");
@@ -71,6 +73,7 @@ public class LoginServlet extends HttpServlet {
         }
         
         HttpSession session = request.getSession(true);
+        session.setAttribute("userId",   userId);
         session.setAttribute("userEmail", email);
         session.setAttribute("userName",  name);
         session.setAttribute("userRole",  role != null ? role : "user");

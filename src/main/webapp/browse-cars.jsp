@@ -278,42 +278,127 @@
                 color: #2b6cb0;
             }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 14px;
-            }
-
-            th, td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #e2e8f0;
-                text-align: left;
-            }
-
-            th {
-                background-color: #f7fafc;
-                font-weight: 600;
-                color: #4a5568;
-            }
-
-            tr:hover td {
-                background-color: #f7fafc;
-            }
-
-            .action-link {
-                text-decoration: none;
-                font-size: 13px;
-                color: #3182ce;
-            }
-
-            .action-link:hover {
-                text-decoration: underline;
-            }
-
             .empty-message {
                 margin-top: 20px;
                 font-size: 14px;
                 color: #4a5568;
+            }
+            
+            /* CAR CARDS */
+            .cars-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 16px;
+                margin-top: 10px;
+            }
+
+            .car-card {
+                background-color: #f9fafb;
+                border-radius: 12px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #e2e8f0;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            
+            .car-image-wrap {
+                position: relative;
+                width: 100%;
+                height: 150px;
+                overflow: hidden;
+            }
+
+            .car-image-wrap img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .car-badge {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                padding: 4px 10px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 600;
+                background-color: rgba(56, 161, 105, 0.9); 
+                color: #fff;
+            }
+
+            .car-badge.unavailable {
+                background-color: rgba(229, 62, 62, 0.9); 
+            }
+
+            .car-body {
+                padding: 10px 12px 6px;
+                flex: 1;
+            }
+
+            .car-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #2d3748;
+                margin-bottom: 4px;
+            }
+
+            .car-meta {
+                font-size: 13px;
+                color: #718096;
+                margin-bottom: 6px;
+            }
+
+            .car-price {
+                font-size: 15px;
+                font-weight: 600;
+                color: #2f855a;
+            }
+
+            .car-footer {
+                padding: 8px 12px 12px;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+            }
+
+            .car-footer .small-note {
+                font-size: 12px;
+                color: #a0aec0;
+                margin-right: auto;
+            }
+
+            .car-footer .btn {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            
+            .car-card-link {
+                display: block;
+                text-decoration: none;
+                color: inherit;
+            }
+
+            .car-card-link.disabled {
+                pointer-events: none;
+                cursor: not-allowed;
+                opacity: 0.75;
+            }
+            
+            .car-card-link:hover .car-card {
+                transform: translateY(-6px) scale(1.02);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            }
+
+            .car-card-link.disabled:hover .car-card {
+                transform: none;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                cursor: not-allowed;
+            }
+            
+            .car-card-link.disabled .car-card {
+                opacity: 0.7;
             }
         </style>
     </head>
@@ -461,52 +546,65 @@
                 <% } %>
 
                 <% if (carList != null && !carList.isEmpty()) { %>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Brand</th>
-                                <th>Model</th>
-                                <th>Type</th>
-                                <th>Capacity</th>
-                                <th>Fuel Type</th>
-                                <th>Price per Day</th>
-                                <th>Available</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (Car car : carList) { %>
-                                <tr>
-                                    <td><%= car.getId() %></td>
-                                    <td><%= car.getBrand() %></td>
-                                    <td><%= car.getModel() %></td>
-                                    <td><%= car.getCarType() %></td>
-                                    <td><%= car.getCapacity() %></td>
-                                    <td><%= car.getFuelType() %></td>
-                                    <td>$<%= String.format("%.2f", car.getPricePerDay()) %></td>
-                                    <td><%= car.isAvailable() ? "Yes" : "No" %></td>
-                                    <td>
-                                        <% if (loggedIn) { %>
-                                            <% if (car.isAvailable()) { %>
-                                                <a class="action-link"
-                                                   href="<%= request.getContextPath() %>/book-car?carId=<%= car.getId() %>">
-                                                    Book
-                                                </a>
-                                            <% } else { %>
-                                                Unavailable
-                                            <% } %>
+                    <div class="cars-grid">
+                        <%
+                            for (Car car : carList) {
+                                String imgPath = (car.getImagePath() != null && !car.getImagePath().isEmpty())
+                                                 ? car.getImagePath()
+                                                 : "images/cars/default-car.jpg";
+
+                                String cardHref;
+                                boolean clickable = true;
+
+                                if (loggedIn && car.isAvailable()) {
+                                    cardHref = request.getContextPath() + "/book-car?carId=" + car.getId();
+                                } else if (!loggedIn) {
+                                    cardHref = request.getContextPath() + "/login.jsp";
+                                } else {
+                                    cardHref = "#";
+                                    clickable = false;
+                                }
+                        %>
+                            <a href="<%= cardHref %>"
+                               class="car-card-link <%= clickable ? "" : "disabled" %>">
+                                <div class="car-card <%= car.isAvailable() ? "" : "unavailable" %>">
+                                    <div class="car-image-wrap">
+                                        <img
+                                            src="<%= request.getContextPath() + "/" + imgPath %>"
+                                            alt="<%= car.getBrand() + " " + car.getModel() %>"
+                                        />
+                                        <span class="car-badge <%= car.isAvailable() ? "" : "unavailable" %>">
+                                            <%= car.isAvailable() ? "Available" : "Unavailable" %>
+                                        </span>
+                                    </div>
+
+                                    <div class="car-body">
+                                        <div class="car-title">
+                                            <%= car.getBrand() %> <%= car.getModel() %>
+                                        </div>
+                                        <div class="car-meta">
+                                            <%= car.getCarType() %> ·
+                                            <%= car.getCapacity() %> seats ·
+                                            <%= car.getFuelType() %>
+                                        </div>
+                                        <div class="car-price">
+                                            $<%= String.format("%.2f", car.getPricePerDay()) %> / day
+                                        </div>
+                                    </div>
+
+                                    <div class="car-footer">
+                                        <% if (!loggedIn) { %>
+                                            <span class="small-note">Click card to login &amp; book</span>
+                                        <% } else if (!car.isAvailable()) { %>
+                                            <span class="small-note">Not available for booking</span>
                                         <% } else { %>
-                                            <a class="action-link"
-                                               href="<%= request.getContextPath() %>/login.jsp">
-                                                Login to Book
-                                            </a>
+                                            <span class="small-note">Click card to book</span>
                                         <% } %>
-                                    </td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
+                                    </div>
+                                </div>
+                            </a>
+                        <% } %>
+                    </div>
                 <% } else { %>
                     <p class="empty-message">No cars match your filter criteria.</p>
                 <% } %>

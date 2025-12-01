@@ -31,24 +31,18 @@ public class BrowseCarsServlet extends HttpServlet {
         String errorMessage = null;
         
         Connection conn = null;
-        Statement resetStmt = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
         try {
             // Connect to database
             conn = DBConnection.getConnection();
-            
-            // Reset all cars to available when page loads
-            resetStmt = conn.createStatement();
-            resetStmt.executeUpdate("UPDATE cars SET available = TRUE");
-            resetStmt.close();
-            
+
             // Build dynamic SQL query based on filters
             StringBuilder sql = new StringBuilder(
-                "SELECT id, brand, model, car_type, capacity, fuel_type, price_per_day, available " +
-                "FROM cars WHERE available = TRUE"
-            );
+            "SELECT id, brand, model, car_type, capacity, fuel_type, price_per_day, available, image_path " +
+            "FROM cars WHERE 1=1"
+        );
             
             List<String> conditions = new ArrayList<>();
             List<Object> parameters = new ArrayList<>();
@@ -114,6 +108,7 @@ public class BrowseCarsServlet extends HttpServlet {
                 car.setFuelType(rs.getString("fuel_type"));
                 car.setPricePerDay(rs.getDouble("price_per_day"));
                 car.setAvailable(rs.getBoolean("available"));
+                car.setImagePath(rs.getString("image_path"));
                 carList.add(car);
             }
             
@@ -126,7 +121,6 @@ public class BrowseCarsServlet extends HttpServlet {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (resetStmt != null) resetStmt.close();
                 if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();

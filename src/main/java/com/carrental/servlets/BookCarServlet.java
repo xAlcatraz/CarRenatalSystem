@@ -100,12 +100,43 @@ public class BookCarServlet extends HttpServlet {
         
         // Check if user is logged in
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+        if (session == null || session.getAttribute("userEmail") == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp?message=Please+log+in+to+book+a+car");
             return;
         }
-        
-        Integer userId = (Integer) session.getAttribute("userId");
+
+        String userEmail = (String) session.getAttribute("userEmail");
+        Integer userId = (Integer) session.getAttribute("userId");  // may be null if login didn't set it
+
+        Connection conn = null;
+        PreparedStatement psUser = null;
+
+        try {
+            // --- 2. If userId isn't in the session, look it up by email ---
+            if (userId == null) {
+                conn = DBConnection.getConnection();
+                String sqlUser = "SELECT id FROM users WHERE email = ?";
+                psUser = conn.prepareStatement(sqlUser);
+                psUser.setString(1, userEmail);
+                ResultSet rsUser = psUser.executeQuery();
+                if (rsUser.next()) {
+                    userId = rsUser.getInt("id");
+                    session.setAttribute("userId", userId); // cache it for next time
+                } else {
+                    // user in session but not in DB (weird, but handle it)
+                    response.sendRedirect(request.getContextPath() + "/login.jsp?error=1");
+                    return;
+                }
+                rsUser.close();
+            }
+        } catch (SQLException e) {
+            throw new ServletException("Error looking up userId", e);
+        } finally {
+            try {
+                if (psUser != null) psUser.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ignore) {}
+        }
         
         // Get form data
         String carIdStr = request.getParameter("carId");
@@ -157,7 +188,6 @@ public class BookCarServlet extends HttpServlet {
             totalHours = 1;
         }
         
-        Connection conn = null;
         PreparedStatement psGetCar = null;
         PreparedStatement psInsertBooking = null;
         PreparedStatement psUpdateCar = null;

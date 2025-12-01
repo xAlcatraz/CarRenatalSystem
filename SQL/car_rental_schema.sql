@@ -22,7 +22,8 @@ CREATE TABLE cars (
   capacity INT,          
   fuel_type VARCHAR(20), 
   price_per_day DECIMAL(8,2) NOT NULL,
-  available BOOLEAN DEFAULT TRUE
+  available BOOLEAN DEFAULT TRUE,
+  image_path VARCHAR(255) NULL
 );
 
 CREATE TABLE bookings (
@@ -77,3 +78,39 @@ INSERT INTO cars (brand, model, car_type, capacity, fuel_type, price_per_day, av
 ('Honda','Accord Hybrid','Sedan',5,'Hybrid',65.00,TRUE),
 ('Toyota','Camry Hybrid','Sedan',5,'Hybrid',62.00,TRUE),
 ('Hyundai','Ioniq Hybrid','Sedan',5,'Hybrid',58.00,TRUE);
+
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE cars SET image_path = 'images/cars/toyota_camry.jpg' WHERE brand='Toyota' AND model='Camry';
+UPDATE cars SET image_path = 'images/cars/honda_civic.jpg' WHERE brand='Honda' AND model='Civic';
+UPDATE cars SET image_path = 'images/cars/ford_escape.jpg' WHERE brand='Ford' AND model='Escape';
+
+UPDATE cars SET image_path = 'images/cars/nissan_altima.jpg' WHERE brand='Nissan' AND model='Altima';
+UPDATE cars SET image_path = 'images/cars/chevy_malibu.jpg' WHERE brand='Chevrolet' AND model='Malibu';
+UPDATE cars SET image_path = 'images/cars/hyundai_sonata.jpg' WHERE brand='Hyundai' AND model='Sonata';
+UPDATE cars SET image_path = 'images/cars/mazda_mazda6.jpg' WHERE brand='Mazda' AND model='Mazda6';
+
+UPDATE cars SET image_path = 'images/cars/jeep_cherokee.jpg' WHERE brand='Jeep' AND model='Grand Cherokee';
+UPDATE cars SET image_path = 'images/cars/toyota_rav4.jpg' WHERE brand='Toyota' AND model='RAV4';
+UPDATE cars SET image_path = 'images/cars/honda_crv.jpg' WHERE brand='Honda' AND model='CR-V';
+UPDATE cars SET image_path = 'images/cars/nissan_rogue.jpg' WHERE brand='Nissan' AND model='Rogue';
+
+UPDATE cars SET image_path = 'images/cars/ford_f-150.jpg' WHERE brand='Ford' AND model='F-150';
+UPDATE cars SET image_path = 'images/cars/chevy_silverado.jpg' WHERE brand='Chevrolet' AND model='Silverado';
+UPDATE cars SET image_path = 'images/cars/ram_1500.jpg' WHERE brand='Ram' AND model='1500';
+UPDATE cars SET image_path = 'images/cars/gmc_sierra.jpg' WHERE brand='GMC' AND model='Sierra';
+
+UPDATE cars SET image_path = 'images/cars/tesla_model3.jpg' WHERE brand='Tesla' AND model='Model 3';
+UPDATE cars SET image_path = 'images/cars/testla_modely.jpg'  WHERE brand='Tesla' AND model='Model Y';
+UPDATE cars SET image_path = 'images/cars/chevy_bolt.jpg' WHERE brand='Chevrolet' AND model='Bolt EV';
+UPDATE cars SET image_path = 'images/cars/nissan_leaf.jpg' WHERE brand='Nissan' AND model='Leaf';
+
+UPDATE cars SET image_path = 'images/cars/toyota_prius.jpg' WHERE brand='Toyota' AND model='Prius';
+UPDATE cars SET image_path = 'images/cars/honda_accord.jpg' WHERE brand='Honda' AND model='Accord Hybrid';
+UPDATE cars SET image_path = 'images/cars/toyota_camryhb.jpg' WHERE brand='Toyota' AND model='Camry Hybrid';
+UPDATE cars SET image_path = 'images/cars/hyundai_ioniqhb.jpg' WHERE brand='Hyundai' AND model='Ioniq Hybrid';
+
+SET SQL_SAFE_UPDATES = 1;
+
+SELECT id, brand, model, image_path
+FROM cars;
