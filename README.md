@@ -115,7 +115,7 @@ All of our servlets do/use the following:
 - my-bookings.jsp
 
 
-### Session Behavior:
+### User Session Behavior:
 - Unathenticated Users must sign in in order to book a car.
 - Logged in users see personalized options
 - Logout clears session
@@ -124,3 +124,30 @@ All of our servlets do/use the following:
 - Login redirects to browse cars
 - Booking a car redirects to confimation booking
 - Confirmation redirects to receipt
+
+## BackEnd
+### Servlets Implemented
+- Authentication Servlets
+    - RegisterServlet: Creates a new user account, validates email, and hashes password
+    - LoginServlet: Authenticates user using BCrypt and loads user session
+    - LogoutServlet: invalidates current session and redirects to login
+- Applications Servlets
+    - BrowseCarsServlet: Displays List of available cars
+    - BookCarServlet: Book a selected car, inserts into database, and marks unavailable
+    - MyBookingsServlet: Displays Booking history for the current logged in user
+
+### BackEnd Behavior:
+- Password Hashing
+- Duplicate Email Detection
+- DAO class seperates Car rental and databse logic
+- Database Handling:
+    - Uses PreparedStatement preventing SQL injections
+    - Connections closed using finally blocks
+- Session Tracking:
+    - Logged in user can book cars
+- Redirect Flow:
+    - Registration -> Login
+    - Login -> Browse Cars
+    - Browse Cars -> Booking
+    - Booking -> Confirmation Page
+    - Logout -> Clear Session and return to Login
