@@ -5,15 +5,22 @@ Date: Nov 13, 2025
 
 ## Overview 
 This milestone implements the backend and database components for our Car Rental System.
-We are using:
+The System Supports:
+- User Authentication (registering, logging in, and logging out)
+- Password Hashing using BCrypt
+- Duplicate Email Validation
+- Car Browsing
+- Car Booking
+- Session Handling
+- JSP Servlet Database integration
+Technologies Used:
 - Java Servlets (Jakarta EE)
 - JSP Pages
 - MySQL Databases
 - JDBC 
 - Apache Tomcat 11
 - NetBeans IDE
-
-We included user authentication, car browsing, booking functionality, and connected the backend to our current frontend.
+- BCrypt (password hashing)
 
 ## How To Run
 ### The following must be Installed:
@@ -24,26 +31,55 @@ We included user authentication, car browsing, booking functionality, and connec
 
 ### Database Set Up
 - Open MySQL Workbech
-- Run the SQL Script provided in project
-- Confirm tables and sample data are created
-- Create DB credentials by going to Files -> CarRentalSystem-1.0/src/main/resources/
-- Copy the db.properties.sample and create a new db.properties file and pase
-- Replace user with MySQL credentials, for example user=root password=MySQL password 
+- Run the SQL Script found in the Files tab (Files -> SQL -> car_rental_schema.sql)
+    - This script will automatically create the database, generate required tables, and insert samples cars.
+- Configuring Databse Credentials 
+    - In NetBeans open src/main/resources/dg.properties and if missing copy the sample and create db.properties
+    - Update with your MySQL credentials (user and password)
+- Running the Project
+    - Clean Build and Run and application should start at the CarRentalSystem/ Home page
 
 ## TODO
-- Password Hashing
-- Duplicate Email Checking
-- Roles (User and Admin currently all are User)
+- Role Based Access Control
+    - Admin vs User Behaviors
+    - Admin dashboard
+    - Admin ability to add, remove, and edit cars
+    - Admin View of all Bookings
 - Profile Page
-- Admin Functionalities
-- Booking History
+    - View and Edit User info
+    - Reset Password
+- Validation Improvements
+    - Currently only a 5 character minimum is enforced 
+    - Better Error Messages
+- Additional Features
+    - Cancel Bookings
+    - Search Bar for Cars
+    - Profile Picture
 
 ## Database Schema
 ### Database name: 'car_rental'
 Project consists of three tables 
-- Users: id, name, email, password, role
-- Cars: id, brand, model, price_per_day, available
-- Bookings: id, user_id, car_id, start_date, end_date, total_price
+- Users:
+    - id INT(PK)
+    - name VARCHAR
+    - email VARCHAR(unique)
+    - password_hash VARCHAR
+    - role ENUM('user','admin')
+- Cars: 
+    - id INT(PK)
+    - brand VARCHAR
+    - model VARCHAR
+    - price_per_day DECIMAL
+    - available BOOLEAN
+    - image_path VARCHAR
+- Bookings: 
+    - id INT(PK)
+    - user_id INT(FK -> users.id)
+    - car_id INT(FK -> cars.id)
+    - start_date DATE
+    - end_date DATE
+    - total_price DECIMAL
+
 ### Relationships
 - user -> bookings
 - car -> bookings
@@ -60,6 +96,7 @@ Running this script will generate our tables and include some sample user and ca
 ### Application Servlets
 - BrowseCarsServlet at /browse-cars displays available cars
 - BookCarServlet at /book-car books selected car and saves it into the booking table
+- MyBookingsServlet at /my-bookings displays booking for that user
 
 All of our servlets do/use the following:
 - JDBC
@@ -68,14 +105,22 @@ All of our servlets do/use the following:
 - Pass data to JSP Pages
 - Use HttpSession for login tracking
 
-## Minimal Frontend/JSP Implementation
+## FrontEnd
 ### User Pages:
+- index.jsp
 - login.jsp
 - register.jsp
 - browse-cars.jsp
 - book-car.jsp
-- index.jsp
+- my-bookings.jsp
+
 
 ### Session Behavior:
-- Main Menu with Browse Cars, Login, and Register Options
-- Logged in user can browse cars and book cars
+- Unathenticated Users must sign in in order to book a car.
+- Logged in users see personalized options
+- Logout clears session
+- Duplicate Email shows error
+- Registration redirects to login
+- Login redirects to browse cars
+- Booking a car redirects to confimation booking
+- Confirmation redirects to receipt
